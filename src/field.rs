@@ -14,7 +14,7 @@ impl Default for Entry{
 }
 
 
-pub fn print_playground (pg: & [[Entry ; 9] ; 9]){
+pub fn print_playground (pg: & [[Entry ; 9] ; 9], debug: bool){
     println!("+-------+-------+-------+");
     for y in 0..9 {
         for x in 0..9 {
@@ -23,8 +23,8 @@ pub fn print_playground (pg: & [[Entry ; 9] ; 9]){
             }
             match pg[x][y]{
                 Entry::Value(i) => print!("{} ", i),
-                // Entry::Possibilities(ref pvec) => print!("{:?} ", pvec),
-                Entry::Possibilities(..) => print!("  "),
+                Entry::Possibilities(ref pvec) =>
+                    if debug == true {print!("{:?} ", pvec);} else { print!("  "); },
             }
         }
         println!("|");
@@ -73,16 +73,50 @@ pub fn valid_line(line: & [Entry ; 9]) -> bool {
 }
 
 
-pub fn remove_from_guesses_line(line: &mut [Entry ; 9], number: u8){
-    for i in line {
-        if let &mut Entry::Possibilities(ref mut mvec) = i {
-            mvec.retain(|&i| i != number);
+fn remove_from_guesses_column(number: u8, pg: &mut [[Entry ; 9] ; 9], col: usize){
+    for i in 0..9 {
+        match pg[col][i]{
+            Entry::Value(x) => if x == number {
+                panic!("Value {} is already in this column", number);
+            },
+            Entry::Possibilities(ref mut vec) => {
+                vec.retain(|x| *x != number);
+            },
+        }
+    }
+}
+
+fn remove_from_guesses_line(number: u8, pg: &mut [[Entry ; 9] ; 9], line: usize){
+    for i in 0..9 {
+        match pg[i][line]{
+            Entry::Value(x) => if x == number {
+                panic!("Value {} is already in this line", number);
+            },
+            Entry::Possibilities(ref mut vec) => {
+                vec.retain(|x| *x != number);
+            },
+        }
+    }
+}
+
+fn remove_from_guesses_square(number: u8, pg: &mut [[Entry ; 9] ; 9],
+                              square_x: usize, square_y: usize){
+    for x in (square_x * 3)..((square_x * 3) + 3){
+        for y in (square_y * 3)..((square_y * 3) + 3){
+            match pg[x][y]{
+                Entry::Value(x) => if x == number {
+                    panic!("Value {} is already in this square", number);
+                },
+                Entry::Possibilities(ref mut vec) => {
+                    vec.retain(|x| *x != number);
+                },
+            }
         }
     }
 }
 
 
-pub fn insert_number(number:u8, pg: &mut [[Entry ; 9] ; 9],
+pub fn insert_number(number:u8, mut pg: &mut [[Entry ; 9] ; 9],
                      x_coord: usize, y_coord: usize){
     if number == 0 || number > 9 {
         panic!("Error: Trying to insert invalid number {} at position [{}][{}]",
@@ -101,43 +135,11 @@ pub fn insert_number(number:u8, pg: &mut [[Entry ; 9] ; 9],
              }
     }
     // Remove the Number from the possibilities Vectors
-    // In the same Row
-    for i in 0..9 {
-        match pg[x_coord][i]{
-            Entry::Value(x) => if x == number {
-                panic!("Value {} is already in this column", number);
-            },
-            Entry::Possibilities(ref mut vec) => {
-                vec.retain(|x| *x != number);
-            },
-        }
-    }
-    // In the same Line
-    for i in 0..9 {
-        match pg[i][y_coord]{
-            Entry::Value(x) => if x == number {
-                panic!("Value {} is already in this column", number);
-            },
-            Entry::Possibilities(ref mut vec) => {
-                vec.retain(|x| *x != number);
-            },
-        }
-    }
-    // In the same Square
+    remove_from_guesses_column(number, &mut pg, x_coord);
+    remove_from_guesses_line(number, &mut pg, y_coord);
     let square_x = x_coord/3;
     let square_y = y_coord/3;
-    for x in (square_x * 3)..((square_x * 3) + 3){
-        for y in (square_y * 3)..((square_y * 3) + 3){
-            match pg[x][y]{
-                Entry::Value(x) => if x == number {
-                    panic!("Value {} is already in this square", number);
-                },
-                Entry::Possibilities(ref mut vec) => {
-                    vec.retain(|x| *x != number);
-                },
-            }
-        }
-    }
+    remove_from_guesses_square(number, &mut pg, square_x, square_y);
     pg[x_coord][y_coord] = Entry::Value(number)
 }
 
@@ -211,13 +213,12 @@ mod insert_number_test {
     }
 
     #[test]
-    fn check_possibilities(){
+    fn possibilities_constistent(){
         let mut refvec = vec![1, 2, 3, 4, 5, 6, 7, 8, 9];
         let mut playground: [[Entry; 9]; 9] = Default::default();
         assert!(is_valid(&playground));
         insert_number(TESTNR, &mut playground, X, Y);
         refvec.retain(|x| *x != TESTNR);
-        print_playground(&playground);
         assert!(playground[X][(Y + 1) % 9 + 1] ==  Entry::Possibilities(refvec.clone())); // Same column
         assert!(playground[(X + 1) % 9 + 1][Y] ==  Entry::Possibilities(refvec.clone())); // Same row
         let x : usize;
