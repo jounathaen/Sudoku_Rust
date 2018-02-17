@@ -1,21 +1,19 @@
 mod field;
 use field::*;
 
+mod sudoku_easy_1;
+
+
 
 fn main() {
 
+    // Init
+    let mut sud: Sudoku = Default::default();
+    print_sudoku(&sud, false);
+    sudoku_easy_1::fill_sudoku(&mut sud);
+    print_sudoku(&sud, false);
+    print_sudoku(&sud, true);
 
-    let mut playground: [[field::Entry; 9]; 9] = Default::default();
-    insert_number(1, &mut playground, 0, 0);
-    insert_number(2, &mut playground, 0, 1);
-    insert_number(3, &mut playground, 0, 2);
-    insert_number(4, &mut playground, 1, 0);
-    insert_number(5, &mut playground, 1, 1);
-
-
-    print_playground(&playground);
-
-    remove_from_guesses_line(&mut playground[0], 5);
 
 
 
