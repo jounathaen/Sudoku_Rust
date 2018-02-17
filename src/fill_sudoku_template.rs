@@ -109,4 +109,5 @@ pub fn fill_sudoku (mut sud: &mut Sudoku){
 fn test_fill_sudoku(){
     let mut sud: Sudoku = Default::default();
     fill_sudoku(&mut sud);
+    sud.check_validity();
 }

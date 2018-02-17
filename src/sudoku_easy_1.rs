@@ -49,10 +49,12 @@ pub fn fill_sudoku (mut sud: &mut Sudoku){
     insert_number(5, &mut sud, 4, 8);
     insert_number(8, &mut sud, 6, 8);
     insert_number(3, &mut sud, 8, 8);
+    sud.set_difficulty(2);
 
 }
 #[test]
 fn test_fill_sudoku(){
     let mut sud: Sudoku = Default::default();
     fill_sudoku(&mut sud);
+    sud.check_validity();
 }
