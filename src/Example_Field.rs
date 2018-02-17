@@ -99,3 +99,10 @@ pub fn fill_playground (mut playground: &mut [[Entry ; 9] ; 9]){
     insert_number(0, &mut playground, 8, 8);
 
 }
+
+
+#[test]
+fn test_fill_playground(){
+    let mut playground: [[Entry; 9]; 9] = Default::default();
+    fill_playground(&mut playground);
+}
