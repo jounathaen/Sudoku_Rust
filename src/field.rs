@@ -222,6 +222,48 @@ impl Sudoku {
         return true;
     }
 
+
+    pub fn easy_solve(&mut self) -> bool {
+        let mut count = 0;
+        while {self.solve_obvious() > 0 } {
+            count = count + 1;
+            println!("Round {}", count);
+            self.print(false);
+        }
+
+        if self.is_solved() {
+            println!("Hooray!!! Solved Sudoku!");
+            self.print(false);
+            return true;
+        }
+        else {
+            println!("====== Recursion: Going Deeper... ======");
+            let mut posvec : Vec<(usize, usize)> = Vec::new();
+            // Building posvec (collecting all unsolved positions)
+            for y in 0..9 {
+                for x in 0..9 {
+                    if let Entry::Possibilities(..) = self.field[x][y] {
+                        posvec.push((x, y));
+                    }
+                }
+            }
+            for i in posvec {
+                if let Entry::Possibilities(mut pvec) = self.field[i.0][i.1].clone(){
+                    while let Some(probe_number) = pvec.pop(){
+                        let mut newsud : Sudoku = self.clone();
+                        println!("trying {:?} at {:?}", probe_number, i);
+                        newsud.insert_number(probe_number, i.0, i.1);
+                        if newsud.easy_solve() {
+                            return true;
+                        }
+                        newsud.print(true);
+                    }
+                }
+            }
+        }
+        panic!("Can't solve Sudoku");
+    }
+
 }
 
 #[derive(Debug,  Clone, PartialEq)]
