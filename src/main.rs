@@ -9,14 +9,17 @@ fn main() {
 
     // Init
     let mut sud: Sudoku = Default::default();
-    print_sudoku(&sud, false);
+    sud.print(false);
     sudoku_easy_1::fill_sudoku(&mut sud);
     sud.check_validity();
-    print_sudoku(&sud, false);
-    print_sudoku(&sud, true);
+    sud.print(false);
+    // sud.print(true);
+    let mut count = 0;
+    while {sud.insert_obvious() > 0 } {
+        count = count + 1;
+        println!("Round {}", count);
+        sud.print(false);
+    }
 
-
-
-
-    // is_valid(&playground);
+    sud.check_validity();
 }
