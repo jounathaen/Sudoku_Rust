@@ -183,7 +183,7 @@ impl Sudoku {
                 if let Entry::Possibilities(ref pvec) = self.field[x][y].clone(){
                     if pvec.len() == 1 {
                         self.insert_number(pvec[0], x, y);
-                        changecount = changecount + 1; 
+                        changecount = changecount + 1;
                     }
                 }
             }
