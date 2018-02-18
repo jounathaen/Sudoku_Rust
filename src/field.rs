@@ -331,5 +331,17 @@ mod test {
         assert!(sud.field[x][y] == Entry::Possibilities(refvec));
     }
 
-
+    #[test]
+    fn insert_obvious_test(){
+        let mut sud: Sudoku = Default::default();
+        sud.insert_number(1,0,0);
+        sud.insert_number(2,0,1);
+        sud.insert_number(3,0,2);
+        sud.insert_number(4,1,0);
+        sud.insert_number(5,1,1);
+        sud.insert_number(6,1,2);
+        sud.insert_number(7,2,0);
+        sud.insert_number(8,2,1);
+        assert!(sud.insert_obvious() == 1);
+    }
 }
