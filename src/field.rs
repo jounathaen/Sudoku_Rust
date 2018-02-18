@@ -198,7 +198,7 @@ impl Sudoku {
         assert!(trimed_input.len() == 81);
         for (i, c) in  trimed_input.chars().enumerate(){
             if let Some(dig) = c.to_digit(10){
-                if dig > 0 && dig < 9 {
+                if dig > 0 && dig <= 9 {
                     let x = i % 9;
                     let y = i / 9;
                     self.insert_number(dig as u8, x, y);
