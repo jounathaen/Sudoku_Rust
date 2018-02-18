@@ -194,7 +194,9 @@ impl Sudoku {
     /// Create a Sudoku from a String. String is read left to right and 0 is
     /// threatened as empty field. Performs a validity check
     pub fn read_from_string(&mut self, input : &String){
-        for (i, c) in  input.chars().enumerate(){
+        let trimed_input = input.trim();
+        assert!(trimed_input.len() == 81);
+        for (i, c) in  trimed_input.chars().enumerate(){
             if let Some(dig) = c.to_digit(10){
                 if dig > 0 && dig < 9 {
                     let x = i % 9;
@@ -366,7 +368,7 @@ mod test {
     fn read_from_string(){
         let mut sud : Sudoku = Default::default();
         let stringfield = String::from(
-            "050083017\
+            "   050083017\
              000100400\
              304005608\
              000030009\
@@ -374,7 +376,7 @@ mod test {
              006000070\
              009000050\
              007290086\
-             103607204");
+             103607204  ");
         sud.read_from_string(&stringfield);
         assert!(sud.field[1][0] == Entry::Value(5));
         assert!(sud.field[4][4] == Entry::Value(2));
@@ -394,6 +396,17 @@ mod test {
              006000070\
              009000050\
              007290086\
+             103607204");
+        sud.read_from_string(&stringfield);
+    }
+
+    #[test]
+    #[should_panic]
+    fn read_from_invalid_length_string(){
+        let mut sud : Sudoku = Default::default();
+        let stringfield = String::from(
+            "050083007\
+             000100400\
              103607204");
         sud.read_from_string(&stringfield);
     }
