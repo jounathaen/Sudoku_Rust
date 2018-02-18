@@ -319,6 +319,7 @@ mod test {
 
     #[test]
     fn remove_guesses_square_test(){
+        let mut sud: Sudoku = Default::default();
         let mut refvec = vec![1, 2, 3, 4, 5, 6, 7, 8, 9];
         refvec.retain(|x| *x != TESTNR);
         let x : usize;
@@ -326,7 +327,6 @@ mod test {
         if X % 3 != 2 {x = X + 1} else {x = X - 1};
         if Y % 3 != 2 {y = Y + 1} else {y = Y - 1};
 
-        let mut sud: Sudoku = Default::default();
         sud.remove_from_guesses_square(TESTNR, X/3, Y/3);
         assert!(sud.field[x][y] == Entry::Possibilities(refvec));
     }
