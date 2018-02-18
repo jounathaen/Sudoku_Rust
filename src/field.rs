@@ -190,6 +190,24 @@ impl Sudoku {
         return changecount;
     }
 
+
+    /// Create a Sudoku from a String. String is read left to right and 0 is
+    /// threatened as empty field. Performs a validity check
+    pub fn read_from_string(&mut self, input : &String){
+        for (i, c) in  input.chars().enumerate(){
+            if let Some(dig) = c.to_digit(10){
+                if dig > 0 && dig < 9 {
+                    let x = i % 9;
+                    let y = i / 9;
+                    self.insert_number(dig as u8, x, y);
+                }
+            }
+            else {
+                panic!("String {} contains non digit value at {}", input, i);
+            }
+        }
+        self.check_validity();
+    }
 }
 
 #[derive(Debug,  Clone, PartialEq)]
@@ -342,5 +360,25 @@ mod test {
         sud.insert_number(7,2,0);
         sud.insert_number(8,2,1);
         assert!(sud.solve_obvious() == 1);
+    }
+
+    #[test]
+    fn read_from_string(){
+        let mut sud : Sudoku = Default::default();
+        let stringfield = String::from(
+            "050083017000100400304005608000030009090824500006000070009000050007290086103607204");
+        sud.read_from_string(&stringfield);
+        assert!(sud.field[1][0] == Entry::Value(5));
+        assert!(sud.field[4][4] == Entry::Value(2));
+        assert!(sud.field[5][8] == Entry::Value(7));
+    }
+
+    #[test]
+    #[should_panic]
+    fn read_from_invalid_string(){
+        let mut sud : Sudoku = Default::default();
+        let stringfield = String::from(
+            "0500830a7000100400XXXXXX608000030009090824500006000070009000050007290086103607204");
+        sud.read_from_string(&stringfield);
     }
 }

@@ -8,4 +8,3 @@ Example Games are taken from https://www.kaggle.com/bryanpark/sudoku/data
 
 TODO
 -----
-Parser for Sudoku Strings
