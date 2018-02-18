@@ -251,7 +251,7 @@ mod test {
 
 
     #[test]
-    fn insert_number_test() {
+    fn insert_number() {
         let mut sud: Sudoku = Default::default();
         sud.insert_number(TESTNR, X, Y);
         assert!(match sud.field[X][Y] {
@@ -309,7 +309,7 @@ mod test {
     }
 
     #[test]
-    fn print_sudoku_test(){
+    fn print_sudoku(){
         let mut sud: Sudoku = Default::default();
         sud.insert_number(TESTNR, X, Y);
         sud.print(true);
@@ -317,7 +317,7 @@ mod test {
     }
 
     #[test]
-    fn remove_guesses_col_test(){
+    fn remove_guesses_col(){
         let mut refvec = vec![1, 2, 3, 4, 5, 6, 7, 8, 9];
         refvec.retain(|x| *x != TESTNR);
         let mut sud: Sudoku = Default::default();
@@ -326,7 +326,7 @@ mod test {
     }
 
     #[test]
-    fn remove_guesses_line_test(){
+    fn remove_guesses_line(){
         let mut refvec = vec![1, 2, 3, 4, 5, 6, 7, 8, 9];
         refvec.retain(|x| *x != TESTNR);
         let mut sud: Sudoku = Default::default();
@@ -335,7 +335,7 @@ mod test {
     }
 
     #[test]
-    fn remove_guesses_square_test(){
+    fn remove_guesses_square(){
         let mut sud: Sudoku = Default::default();
         let mut refvec = vec![1, 2, 3, 4, 5, 6, 7, 8, 9];
         refvec.retain(|x| *x != TESTNR);
@@ -349,7 +349,7 @@ mod test {
     }
 
     #[test]
-    fn solve_obvious_test(){
+    fn solve_obvious(){
         let mut sud: Sudoku = Default::default();
         sud.insert_number(1,0,0);
         sud.insert_number(2,0,1);
