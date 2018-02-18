@@ -175,9 +175,23 @@ impl Sudoku {
         }
     }
 
+    pub fn insert_obvious(&mut self) -> u8{
+        // TODO: write Test
+        let mut changecount : u8 = 0;
+        for y in 0..9{
+            for x in 0..9{
+                if let Entry::Possibilities(ref pvec) = self.field[x][y].clone(){
+                    if pvec.len() == 1 {
+                        self.insert_number(pvec[0], x, y);
+                        changecount = changecount + 1; 
+                    }
+                }
+            }
+        }
+        return changecount;
+    }
+
 }
-
-
 
 #[derive(Debug,  Clone, PartialEq)]
 enum Entry{
