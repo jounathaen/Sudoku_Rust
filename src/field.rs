@@ -210,6 +210,18 @@ impl Sudoku {
         }
         self.check_validity();
     }
+
+    pub fn is_solved (&self) -> bool {
+        for y in 0..9 {
+            for x in 0..9 {
+                if let Entry::Possibilities(..) = self.field[y][x] {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
 }
 
 #[derive(Debug,  Clone, PartialEq)]
@@ -410,4 +422,35 @@ mod test {
              103607204");
         sud.read_from_string(&stringfield);
     }
+
+    #[test]
+    fn is_solved(){
+        let mut sud : Sudoku = Default::default();
+        let mut stringfield = String::from(
+            "050083017\
+             000100400\
+             304005608\
+             000030009\
+             090824500\
+             006000070\
+             009000050\
+             007290086\
+             103607204");
+        sud.read_from_string(&stringfield);
+        assert!(sud.is_solved() == false);
+        sud = Default::default();
+        stringfield = String::from(
+            "652483917\
+             978162435\
+             314975628\
+             825736149\
+             791824563\
+             436519872\
+             269348751\
+             547291386\
+             183657294");
+        sud.read_from_string(&stringfield);
+        assert!(sud.is_solved() == true);
+    }
+
 }
