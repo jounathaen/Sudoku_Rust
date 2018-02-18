@@ -206,7 +206,7 @@ mod test {
     #[test]
     fn valid_field(){
         let sud: Sudoku = Default::default();
-        sud.print_sudoku(true);
+        sud.print(true);
         sud.check_validity();
     }
 
@@ -313,7 +313,7 @@ mod test {
         if Y % 3 != 2 {y = Y + 1} else {y = Y - 1};
 
         let mut sud: Sudoku = Default::default();
-        remove_from_guesses_square(TESTNR, &mut sud, X/3, Y/3);
+        sud.remove_from_guesses_square(TESTNR, X/3, Y/3);
         assert!(sud.field[x][y] == Entry::Possibilities(refvec));
     }
 
