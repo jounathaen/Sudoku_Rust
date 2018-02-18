@@ -15,7 +15,7 @@ fn main() {
     sud.print(false);
     // sud.print(true);
     let mut count = 0;
-    while {sud.insert_obvious() > 0 } {
+    while {sud.solve_obvious() > 0 } {
         count = count + 1;
         println!("Round {}", count);
         sud.print(false);

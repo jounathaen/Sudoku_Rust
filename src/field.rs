@@ -175,7 +175,7 @@ impl Sudoku {
         }
     }
 
-    pub fn insert_obvious(&mut self) -> u8{
+    pub fn solve_obvious(&mut self) -> u8{
         let mut changecount : u8 = 0;
         for y in 0..9{
             for x in 0..9{
@@ -331,7 +331,7 @@ mod test {
     }
 
     #[test]
-    fn insert_obvious_test(){
+    fn solve_obvious_test(){
         let mut sud: Sudoku = Default::default();
         sud.insert_number(1,0,0);
         sud.insert_number(2,0,1);
@@ -341,6 +341,6 @@ mod test {
         sud.insert_number(6,1,2);
         sud.insert_number(7,2,0);
         sud.insert_number(8,2,1);
-        assert!(sud.insert_obvious() == 1);
+        assert!(sud.solve_obvious() == 1);
     }
 }
