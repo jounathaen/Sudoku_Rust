@@ -4,13 +4,14 @@
 #[derive(Default, Debug, Clone, PartialEq)]
 pub struct Sudoku{
     field : [[Entry ; 9] ; 9],
-    difficulty : u8,
+    // difficulty : u8,
 }
 
 impl Sudoku {
-    pub fn set_difficulty (&mut self, diff : u8){
-        self.difficulty = diff;
-    }
+    // pub fn set_difficulty (&mut self, diff : u8){
+    //     self.difficulty = diff;
+    // }
+
     /// Checks if a Sudoku is valid, i.e. no Values are Duplicate and no
     /// Possibilities Entry exists which is invalid.
     /// panics if sudoku is not valid
