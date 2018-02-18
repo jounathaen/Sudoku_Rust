@@ -24,6 +24,7 @@ fn solve_sudokus(file_path: &String) -> Result<(), Box<Error>> {
     Ok(())
 }
 
+fn main() {
     // Init
     let mut sud: Sudoku = Default::default();
     sud.print(false);
