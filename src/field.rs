@@ -176,7 +176,6 @@ impl Sudoku {
     }
 
     pub fn insert_obvious(&mut self) -> u8{
-        // TODO: write Test
         let mut changecount : u8 = 0;
         for y in 0..9{
             for x in 0..9{
