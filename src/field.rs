@@ -104,8 +104,6 @@ impl Sudoku {
     }
 
 
-
-
     /// Inserts a number at the given Coordinates. Note: Coordinates start at 0 and
     /// end at 8. Number must be between 1 and 9
     pub fn insert_number(&mut self, number:u8,
@@ -147,6 +145,7 @@ impl Sudoku {
             }
         }
     }
+
     fn remove_from_guesses_line(&mut self, number: u8, line: usize){
         for i in 0..9 {
             match self.field[i][line]{
@@ -159,6 +158,7 @@ impl Sudoku {
             }
         }
     }
+
     fn remove_from_guesses_square(&mut self, number: u8,
                                   square_x: usize, square_y: usize){
         for x in (square_x * 3)..((square_x * 3) + 3){
