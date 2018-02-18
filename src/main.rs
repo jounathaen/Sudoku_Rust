@@ -25,6 +25,7 @@ fn solve_sudokus(file_path: &String) -> Result<(), Box<Error>> {
 }
 
 
+fn main() {
     let file_path = "/";
     if let Err(err) = solve_sudokus(&String::from(file_path)) {
         println!("{}", err);
