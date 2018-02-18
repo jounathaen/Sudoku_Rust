@@ -366,7 +366,15 @@ mod test {
     fn read_from_string(){
         let mut sud : Sudoku = Default::default();
         let stringfield = String::from(
-            "050083017000100400304005608000030009090824500006000070009000050007290086103607204");
+            "050083017\
+             000100400\
+             304005608\
+             000030009\
+             090824500\
+             006000070\
+             009000050\
+             007290086\
+             103607204");
         sud.read_from_string(&stringfield);
         assert!(sud.field[1][0] == Entry::Value(5));
         assert!(sud.field[4][4] == Entry::Value(2));
@@ -378,7 +386,26 @@ mod test {
     fn read_from_invalid_string(){
         let mut sud : Sudoku = Default::default();
         let stringfield = String::from(
-            "0500830a7000100400XXXXXX608000030009090824500006000070009000050007290086103607204");
+            " 0500830a7\
+             000100400\
+             XXXXXX608\
+             000030009\
+             090824500\
+             006000070\
+             009000050\
+             007290086\
+             103607204");
+        sud.read_from_string(&stringfield);
+    }
+    #[test]
+    #[should_panic]
+    fn read_from_wrong_length_string(){
+        let mut sud : Sudoku = Default::default();
+        let stringfield = String::from(
+            " 0500830a7\
+             000100400\
+             XXXXXX608\
+             103607204");
         sud.read_from_string(&stringfield);
     }
 }
