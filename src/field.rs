@@ -423,6 +423,24 @@ mod test {
         sud.check_validity().unwrap();
     }
 
+    #[test]
+    #[should_panic]
+    fn field_double_number() {
+        let mut sud: Sudoku = Default::default();
+        sud.read_from_string(&String::from(
+            "503070190\
+             000006750\
+             047190600\
+             400038000\
+             950200300\
+             000010072\
+             000804001\
+             300001860\
+             086720005")).unwrap();
+        sud.field[1][0] = Entry::Value(5);
+        sud.check_validity().unwrap();
+    }
+
 
     #[test]
     fn insert_number() {
@@ -611,6 +629,38 @@ mod test {
              183657294");
         sud.read_from_string(&stringfield).unwrap();
         assert!(sud.is_solved() == true);
+    }
+
+    #[test]
+    fn easy_solve(){
+        let mut sud: Sudoku = Default::default();
+        sud.read_from_string(&String::from(
+            "068700900\
+             004000071\
+             030809050\
+             300080100\
+             040005007\
+             007304092\
+             602001005\
+             000020600\
+             059030028")).unwrap();
+        sud.easy_solve().unwrap();
+        assert!(sud.field[0][0] == Entry::Value(5));
+        assert!(sud.field[0][4] == Entry::Value(2));
+        assert!(sud.field[4][5] == Entry::Value(6));
+        assert!(sud.field[6][8] == Entry::Value(7));
+        // 568 | 712 | 943
+        // 924 | 653 | 871
+        // 731 | 849 | 256
+        // ---------------
+        // 395 | 287 | 164
+        // 246 | 195 | 387
+        // 817 | 364 | 592
+        // ---------------
+        // 682 | 971 | 435
+        // 473 | 528 | 619
+        // 159 | 436 | 728
+
     }
 
 }
