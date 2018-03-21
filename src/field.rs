@@ -22,9 +22,6 @@ impl Default for Lvl{
 
 
 impl Sudoku {
-    // pub fn set_difficulty (&mut self, diff : u8){
-    //     self.difficulty = diff;
-    // }
 
     /// Checks if a Sudoku is valid, i.e. no Values are Duplicate and no
     /// Possibilities Entry exists which is invalid.
