@@ -3,9 +3,12 @@
 
 extern crate csv;
 extern crate time;
+extern crate termion;
+
 use std::fs::File;
 use std::error::Error;
 use std::fmt;
+use termion::{clear, cursor};
 use std::time::Duration;
 use std::thread;
 
@@ -273,50 +276,73 @@ impl Sudoku {
     }
 
 
-    pub fn easy_solve(&mut self) -> Result<(), SolvingError> {
+    pub fn easy_solve(&mut self, lvl: u64) -> Result<(), SolvingError> {
+        if self.print_lvl == Lvl::Interactive{
+            println!("{}{}{}",clear::All, cursor::Goto(1,1), self);
+            thread::sleep(Duration::from_millis(500));
+        }
         let mut count = 0;
         let mut changes = 1;
         while {changes > 0 } {
+            if self.print_lvl == Lvl::Verbose {
+                println!("Round {}{}", count, self);
+            }
+            if self.print_lvl == Lvl::Interactive{
+                print!("{}{}Round {}{}", clear::All, cursor::Goto(1,1), count, self);
+                thread::sleep(Duration::from_millis(200));
+            }
             count = count + 1;
             match self.solve_obvious(){
                 Ok (i) => changes = i,
                 Err(err) => return Err(err),
             }
-            println!("Round {}", count);
-            self.print(false);
+            // TODO solve not so obvious ones, where i is the only appearance in a line or Block
         }
 
         if self.is_solved() {
-            println!("Hooray!!! Solved Sudoku!");
-            self.print(false);
+            if self.print_lvl != Lvl::None{
+                println!("Hooray!!! Solved Sudoku! {}", self);
+            }
             return Ok(());
         }
         else {
-            println!("====== Recursion: Going Deeper... ======");
-            let mut posvec : Vec<(usize, usize)> = Vec::new();
-            // Building posvec (collecting all unsolved positions)
-            for y in 0..9 {
+            if self.print_lvl == Lvl::Verbose {
+                println!("====== Recursion: Going Deeper... ======");
+            }
+
+            let mut first_choice = (0,0);
+            'yloop: for y in 0..9 {
                 for x in 0..9 {
                     if let Entry::Possibilities(..) = self.field[x][y] {
-                        posvec.push((x, y));
+                        first_choice = (x, y);
+                        break 'yloop;
                     }
                 }
             }
-            println!("posvec {:?}", posvec.clone());
-            for i in posvec {
-                if let Entry::Possibilities(mut pvec) = self.field[i.0][i.1].clone(){
-                    while let Some(probe_number) = pvec.pop(){
-                        let mut newsud : Sudoku = self.clone();
-                        println!("trying {:?} at {:?}", probe_number, i);
-                        newsud.print(false);
-                        match newsud.insert_number(probe_number, i.0, i.1){
-                            Err(..) => {println!(">> Didn't work. DANG!\n\n\n"); break},
-                            Ok(..) => {},
+            if let Entry::Possibilities(mut pvec) = self.field[first_choice.0][first_choice.1].clone(){
+                while let Some(probe_number) = pvec.pop(){
+                    let mut newsud : Sudoku = self.clone();
+                    match newsud.insert_number(probe_number, first_choice.0, first_choice.1){
+                        Err(..) => {println!(">> Didn't work. DANG!\n\n\n"); break},
+                        Ok(..) => {},
+                    }
+
+                    match self.print_lvl {
+                        Lvl::Verbose => {
+                            println!("trying {:?} at {:?}", probe_number, first_choice);},
+                        Lvl::Interactive => {
+                            println!("{}{}trying {:?} at {:?}{}", clear::All,
+                                     cursor::Goto(1,1), probe_number, first_choice, self);
+                            thread::sleep(Duration::from_millis(1500));
                         }
-                        if let Ok(..) = newsud.easy_solve() {
-                            self.field = newsud.field;
-                            return Ok(());
-                        }
+                        Lvl::None => {},
+                        Lvl::Solution => {},
+                    }
+                    if let Ok(..) = newsud.easy_solve(lvl + 1) {
+                        self.field = newsud.field;
+                        return Ok(());
+                    }
+                    if self.print_lvl == Lvl::Verbose || self.print_lvl == Lvl::Interactive {
                         println!(">>>>>>> Nope, let's try another one <<<<<<<<<");
                     }
                 }
