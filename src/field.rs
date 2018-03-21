@@ -1,8 +1,13 @@
 // fields.rs contains functions which give access to the sudoku field.
 // Jonathan Klimt
 
+extern crate csv;
+extern crate time;
+use std::fs::File;
 use std::error::Error;
 use std::fmt;
+use std::time::Duration;
+use std::thread;
 
 #[derive(Default, Debug, Clone, PartialEq)]
 pub struct Sudoku{
@@ -456,7 +461,38 @@ impl Error for InsertError {
     }
 }
 
+//TODO Write test
+pub fn solve_sudokus_from_csv(file_path: &String) -> Result<(), Box<Error>> {
+    let mut counter : u64 = 1;
+    let beginn_time= time::precise_time_ns();
+    let file = File::open(file_path)?;
+    let mut rdr = csv::Reader::from_reader(file);
+    for result in rdr.records() {
+        let mut sud: Sudoku = Default::default();
+        if let Some(substring) = result.unwrap().get(0){
+            let start = time::precise_time_ns();
+            sud.read_from_string(&String::from(substring))?;
+            if sud.print_lvl != Lvl::None {
+                println!("{:?}", substring);
+                println!("Sudoku: {}", sud);
+            }
 
+            match sud.easy_solve(0){
+                Err(..) => panic!("Unsolvable Sudoku"),
+                Ok(()) => {},
+            }
+            if sud.print_lvl != Lvl::None {
+                println!("solved Sudoku: {}", sud);
+            }
+            let diff : f64 = (time::precise_time_ns() - start) as f64 / 1000000.0;
+            println!("took {} ms to solve Sudoku {}", diff, counter);
+            counter = counter + 1;
+        }
+    }
+    let diff : f64 = (time::precise_time_ns() - beginn_time) as f64 / 1000000.0;
+    println!("took {} ms to solve all Sudokus", diff);
+    Ok(())
+}
 
 
 #[cfg(test)]
