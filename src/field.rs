@@ -7,8 +7,19 @@ use std::fmt;
 #[derive(Default, Debug, Clone, PartialEq)]
 pub struct Sudoku{
     field : [[Entry ; 9] ; 9],
-    // difficulty : u8,
+    pub print_lvl : Lvl,
 }
+#[derive(Debug, Clone, PartialEq)]
+pub enum Lvl{
+    None,
+    Solution,
+    Verbose,
+    Interactive
+}
+impl Default for Lvl{
+    fn default() -> Lvl {Lvl::None}
+}
+
 
 impl Sudoku {
     // pub fn set_difficulty (&mut self, diff : u8){
@@ -92,26 +103,6 @@ impl Sudoku {
             }
         }
         return cnt;
-    }
-
-    pub fn print(&self, debug: bool){
-        println!("+-------+-------+-------+");
-        for y in 0..9 {
-            for x in 0..9 {
-                if x % 3 == 0 {
-                    print!("| ")
-                }
-                match self.field[x][y]{
-                    Entry::Value(i) => print!("{} ", i),
-                    Entry::Possibilities(ref pvec) =>
-                        if debug == true {print!("{:?} ", pvec);} else { print!("  "); },
-                }
-            }
-            println!("|");
-            if y % 3 == 2 {
-                println!("+-------+-------+-------+");
-            }
-        }
     }
 
 
@@ -334,6 +325,78 @@ impl Sudoku {
 
 }
 
+impl fmt::Display for Sudoku{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        if self.print_lvl == Lvl::Verbose || self.print_lvl == Lvl::Interactive{
+            write!(f, "\n ┏━━━━━┯━━━━━┯━━━━━┳━━━━━┯━━━━━┯━━━━━┳━━━━━┯━━━━━┯━━━━━┓\n")?;
+            for y in 0..9 {
+                for y1 in 0..3 {
+                    for x in 0..9 {
+                        if x % 3 == 0 {
+                            write!(f, " ┃ ")?;
+                        } else {
+                            write!(f, " │ ")?;
+                        }
+
+                        match self.field[x][y]{
+                            Entry::Value(i) =>
+                                if y1 == 1 {
+                                    write!(f, " {} ", i)?;
+                                } else {
+                                    write!(f, "   ")?;
+                                },
+                            Entry::Possibilities(ref pvec) =>
+                                for x1 in 1..4 {
+                                    if pvec.contains(&((x1 + y1 * 3) as u8)) {
+                                        write!(f, "{}", x1 + y1 * 3)?;
+                                    }
+                                    else{
+                                        write!(f, ".")?;
+                                    }
+                                },
+                        }
+                    }
+                    write!(f, " ┃\n")?;
+                }
+                if y != 8 {
+                    if y % 3 == 2 {
+                        write!(f, " ┣━━━━━┿━━━━━┿━━━━━╋━━━━━┿━━━━━┿━━━━━╋━━━━━┿━━━━━┿━━━━━┫\n")?;
+                    } else {
+                        write!(f, " ┠─────┼─────┼─────╂─────┼─────┼─────╂─────┼─────┼─────┨\n")?;
+                    }
+                }
+            }
+            write!(f, " ┗━━━━━┷━━━━━┷━━━━━┻━━━━━┷━━━━━┷━━━━━┻━━━━━┷━━━━━┷━━━━━┛\n")
+        }
+        else{
+            write!(f, "\n ┏━━━┯━━━┯━━━┳━━━┯━━━┯━━━┳━━━┯━━━┯━━━┓\n")?;
+            for y in 0..9 {
+                for x in 0..9 {
+                    if x % 3 == 0 {
+                        write!(f, " ┃ ")?;
+                    } else {
+                        write!(f, " │ ")?;
+                    }
+                    match self.field[x][y]{
+                        Entry::Value(i) => write!(f, "{}", i)?,
+                        Entry::Possibilities(..) =>
+                            write!(f, " ")?,
+                    }
+                }
+                write!(f, " ┃\n")?;
+                if y != 8 {
+                    if y % 3 == 2 {
+                        write!(f, " ┣━━━┿━━━┿━━━╋━━━┿━━━┿━━━╋━━━┿━━━┿━━━┫\n")?;
+                    } else {
+                        write!(f, " ┠───┼───┼───╂───┼───┼───╂───┼───┼───┨\n")?;
+                    }
+                }
+            }
+            write!(f, " ┗━━━┷━━━┷━━━┻━━━┷━━━┷━━━┻━━━┷━━━┷━━━┛\n")
+        }
+    }
+}
+
 #[derive(Debug,  Clone, PartialEq)]
 enum Entry{
     Value (u8),
@@ -411,7 +474,6 @@ mod test {
     #[test]
     fn valid_field(){
         let sud: Sudoku = Default::default();
-        sud.print(true);
         sud.check_validity().unwrap();
     }
 
@@ -504,8 +566,7 @@ mod test {
     fn print_sudoku(){
         let mut sud: Sudoku = Default::default();
         sud.insert_number(TESTNR, X, Y).unwrap();
-        sud.print(true);
-        sud.print(false);
+        println!("{}", sud);
     }
 
     #[test]
