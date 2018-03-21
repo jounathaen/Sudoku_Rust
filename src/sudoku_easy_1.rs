@@ -13,7 +13,7 @@
 // +---+---+---+
 use field::*;
 
-pub fn fill_sudoku (mut sud: &mut Sudoku){
+pub fn fill_sudoku (sud: &mut Sudoku){
 
     sud.insert_number(4,  2, 0);
     sud.insert_number(8,  4, 0);
