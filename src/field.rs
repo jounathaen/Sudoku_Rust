@@ -1,5 +1,5 @@
 // fields.rs contains functions which give access to the sudoku field.
-// Jonathan KLimt
+// Jonathan Klimt
 
 use std::error::Error;
 use std::fmt;
