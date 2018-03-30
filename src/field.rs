@@ -8,15 +8,26 @@ extern crate termion;
 use std::fs::File;
 use std::error::Error;
 use std::fmt;
-use termion::{clear, cursor};
+use self::termion::{clear, cursor, color, style};
 use std::time::Duration;
 use std::thread;
 
+
+static ANIM_SPEED: u64 = 1500;
+
+
 #[derive(Default, Debug, Clone, PartialEq)]
 pub struct Sudoku{
-    field : [[Entry ; 9] ; 9],
+    grid : [[Field ; 9] ; 9], // Rework this, no touple
     pub print_lvl : Lvl,
 }
+
+#[derive(Default, Debug, Clone, PartialEq)]
+struct Field {
+    entry : Entry,
+    status : Status,
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Lvl{
     None,
@@ -28,6 +39,15 @@ impl Default for Lvl{
     fn default() -> Lvl {Lvl::None}
 }
 
+#[derive(Debug, Clone, PartialEq)]
+enum Status{
+    Given,
+    Inserted
+}
+impl Default for Status{
+    fn default() -> Status {Status::Inserted}
+}
+
 
 impl Sudoku {
 
@@ -37,7 +57,7 @@ impl Sudoku {
     pub fn check_validity(&self) -> Result<(), SolvingError> {
         for y in 0..9 {
             for x in 0..9 {
-                match self.field[x][y].clone(){
+                match self.grid[x][y].entry.clone(){
                     Entry::Value(i) => {
                         if (self.check_col_for_number(i, x) != 1) ||
                             (self.check_line_for_number(i, y) != 1) ||
@@ -71,7 +91,7 @@ impl Sudoku {
     fn check_col_for_number(&self, number: u8, col: usize) -> u8 {
         let mut cnt = 0;
         for i in 0..9 {
-            match self.field[col][i]{
+            match self.grid[col][i].entry{
                 Entry::Value(x) => if x == number {
                     cnt = cnt + 1;
                 },
@@ -84,7 +104,7 @@ impl Sudoku {
     fn check_line_for_number(&self, number: u8, line: usize) -> u8 {
         let mut cnt = 0;
         for i in 0..9 {
-            match self.field[i][line]{
+            match self.grid[i][line].entry{
                 Entry::Value(x) => if x == number {
                     cnt = cnt + 1;
                 },
@@ -99,7 +119,7 @@ impl Sudoku {
         let mut cnt = 0;
         for x in (square_x * 3)..((square_x * 3) + 3){
             for y in (square_y * 3)..((square_y * 3) + 3){
-                match self.field[x][y]{
+                match self.grid[x][y].entry{
                     Entry::Value(i) => if i == number {
                         cnt = cnt + 1;
                     },
@@ -118,7 +138,7 @@ impl Sudoku {
         if number == 0 || number > 9 {
             return Err(From::from(InsertError::new(x_coord, y_coord)));
         }
-        match self.field[x_coord][y_coord]{
+        match self.grid[x_coord][y_coord].entry{
             Entry::Value(..) => return Err(From::from(InsertError::new(x_coord, y_coord))),
             Entry::Possibilities(ref mut gvec) =>
                 match gvec.iter().position(|&x| x == number) {
@@ -132,7 +152,7 @@ impl Sudoku {
         let square_x = x_coord/3;
         let square_y = y_coord/3;
         self.remove_from_guesses_square(number, square_x, square_y)?;
-        self.field[x_coord][y_coord] = Entry::Value(number);
+        self.grid[x_coord][y_coord].entry = Entry::Value(number);
         Ok(())
     }
 
@@ -140,7 +160,7 @@ impl Sudoku {
                                -> Result<(), Box<Error>>{
         let mut empty_field_count = 0;
         for i in 0..9 {
-            match self.field[col][i]{
+            match self.grid[col][i].entry{
                 Entry::Value(x) => if x == number {
                     return Err(From::from(InsertError::new(i, col)));
                 },
@@ -167,7 +187,7 @@ impl Sudoku {
                                 -> Result<(), Box<Error>>{
         let mut empty_field_count = 0;
         for i in 0..9 {
-            match self.field[i][line]{
+            match self.grid[i][line].entry{
                 Entry::Value(x) => if x == number {
                     return Err(From::from(InsertError::new(line, i)));
                 },
@@ -194,7 +214,7 @@ impl Sudoku {
         let mut empty_field_count = 0;
         for x in (square_x * 3)..((square_x * 3) + 3){
             for y in (square_y * 3)..((square_y * 3) + 3){
-                match self.field[x][y]{
+                match self.grid[x][y].entry{
                     Entry::Value(i) => if i == number {
                         return Err(From::from(InsertError::new(x, y)));
                     },
@@ -220,7 +240,7 @@ impl Sudoku {
         let mut changecount : u8 = 0;
         for y in 0..9{
             for x in 0..9{
-                if let Entry::Possibilities(ref pvec) = self.field[x][y].clone(){
+                if let Entry::Possibilities(ref pvec) = self.grid[x][y].entry.clone(){
                     if pvec.len() == 1 {
                         match self.insert_number(pvec[0], x, y){
                             Err(..) => return Err(SolvingError::new(&format!(
@@ -249,6 +269,7 @@ impl Sudoku {
                     let x = i % 9;
                     let y = i / 9;
                     self.insert_number(dig as u8, x, y)?;
+                    self.grid[x][y].status = Status::Given;
                 }
             }
             else {
@@ -267,7 +288,7 @@ impl Sudoku {
     pub fn is_solved (&self) -> bool {
         for y in 0..9 {
             for x in 0..9 {
-                if let Entry::Possibilities(..) = self.field[y][x] {
+                if let Entry::Possibilities(..) = self.grid[y][x].entry {
                     return false;
                 }
             }
@@ -276,10 +297,11 @@ impl Sudoku {
     }
 
 
-    pub fn easy_solve(&mut self, lvl: u64) -> Result<(), SolvingError> {
+    // pub fn easy_solve(&mut self, lvl: u64) -> Result<(), SolvingError> {
+    pub fn easy_solve(&mut self) -> Result<(), SolvingError> {
         if self.print_lvl == Lvl::Interactive{
-            println!("{}{}{}",clear::All, cursor::Goto(1,1), self);
-            thread::sleep(Duration::from_millis(500));
+            println!("{}{}Now Solve!{}",clear::All, cursor::Goto(1,1), self);
+            thread::sleep(Duration::from_millis(ANIM_SPEED));
         }
         let mut count = 0;
         let mut changes = 1;
@@ -289,7 +311,7 @@ impl Sudoku {
             }
             if self.print_lvl == Lvl::Interactive{
                 print!("{}{}Round {}{}", clear::All, cursor::Goto(1,1), count, self);
-                thread::sleep(Duration::from_millis(200));
+                thread::sleep(Duration::from_millis(ANIM_SPEED));
             }
             count = count + 1;
             match self.solve_obvious(){
@@ -313,13 +335,13 @@ impl Sudoku {
             let mut first_choice = (0,0);
             'yloop: for y in 0..9 {
                 for x in 0..9 {
-                    if let Entry::Possibilities(..) = self.field[x][y] {
+                    if let Entry::Possibilities(..) = self.grid[x][y].entry {
                         first_choice = (x, y);
                         break 'yloop;
                     }
                 }
             }
-            if let Entry::Possibilities(mut pvec) = self.field[first_choice.0][first_choice.1].clone(){
+            if let Entry::Possibilities(mut pvec) = self.grid[first_choice.0][first_choice.1].entry.clone(){
                 while let Some(probe_number) = pvec.pop(){
                     let mut newsud : Sudoku = self.clone();
                     match newsud.insert_number(probe_number, first_choice.0, first_choice.1){
@@ -333,13 +355,13 @@ impl Sudoku {
                         Lvl::Interactive => {
                             println!("{}{}trying {:?} at {:?}{}", clear::All,
                                      cursor::Goto(1,1), probe_number, first_choice, self);
-                            thread::sleep(Duration::from_millis(1500));
+                            thread::sleep(Duration::from_millis(ANIM_SPEED));
                         }
                         Lvl::None => {},
                         Lvl::Solution => {},
                     }
-                    if let Ok(..) = newsud.easy_solve(lvl + 1) {
-                        self.field = newsud.field;
+                    if let Ok(..) = newsud.easy_solve() {
+                        self.grid = newsud.grid;
                         return Ok(());
                     }
                     if self.print_lvl == Lvl::Verbose || self.print_lvl == Lvl::Interactive {
@@ -366,14 +388,21 @@ impl fmt::Display for Sudoku{
                             write!(f, " │ ")?;
                         }
 
-                        match self.field[x][y]{
+                        match self.grid[x][y].entry{
                             Entry::Value(i) =>
                                 if y1 == 1 {
-                                    write!(f, " {} ", i)?;
+                                    if self.grid[x][y].status == Status::Given{
+                                        write!(f, " {}{}{}{}{} ", style::Bold,
+                                               color::Fg(color::Red), i,
+                                               color::Fg(color::Reset), style::Reset)?;
+                                    }else{
+                                        write!(f, " {} ", i)?;
+                                    }
                                 } else {
                                     write!(f, "   ")?;
                                 },
-                            Entry::Possibilities(ref pvec) =>
+                            Entry::Possibilities(ref pvec) => {
+                                write!(f, "{}", color::Fg(color::LightCyan))?;
                                 for x1 in 1..4 {
                                     if pvec.contains(&((x1 + y1 * 3) as u8)) {
                                         write!(f, "{}", x1 + y1 * 3)?;
@@ -381,7 +410,9 @@ impl fmt::Display for Sudoku{
                                     else{
                                         write!(f, ".")?;
                                     }
-                                },
+                                }
+                                write!(f, "{}", color::Fg(color::Reset))?
+                            },
                         }
                     }
                     write!(f, " ┃\n")?;
@@ -405,7 +436,7 @@ impl fmt::Display for Sudoku{
                     } else {
                         write!(f, " │ ")?;
                     }
-                    match self.field[x][y]{
+                    match self.grid[x][y].entry{
                         Entry::Value(i) => write!(f, "{}", i)?,
                         Entry::Possibilities(..) =>
                             write!(f, " ")?,
@@ -503,7 +534,7 @@ pub fn solve_sudokus_from_csv(file_path: &String) -> Result<(), Box<Error>> {
                 println!("Sudoku: {}", sud);
             }
 
-            match sud.easy_solve(0){
+            match sud.easy_solve(){
                 Err(..) => panic!("Unsolvable Sudoku"),
                 Ok(()) => {},
             }
@@ -531,16 +562,16 @@ mod test {
 
 
     #[test]
-    fn valid_field(){
+    fn valid_grid(){
         let sud: Sudoku = Default::default();
         sud.check_validity().unwrap();
     }
 
     #[test]
     #[should_panic]
-    fn invalid_field() {
+    fn invalid_grid() {
         let mut sud: Sudoku = Default::default();
-        sud.field[X][Y] = Entry::Value(TESTNR);
+        sud.grid[X][Y].entry = Entry::Value(TESTNR);
         sud.check_validity().unwrap();
     }
 
@@ -558,7 +589,7 @@ mod test {
              000804001\
              300001860\
              086720005")).unwrap();
-        sud.field[1][0] = Entry::Value(5);
+        sud.grid[1][0].entry = Entry::Value(5);
         sud.check_validity().unwrap();
     }
 
@@ -567,7 +598,7 @@ mod test {
     fn insert_number() {
         let mut sud: Sudoku = Default::default();
         sud.insert_number(TESTNR, X, Y).unwrap();
-        assert!(match sud.field[X][Y] {
+        assert!(match sud.grid[X][Y].entry {
             Entry::Value(i) => if i == TESTNR {true} else {false},
             Entry::Possibilities(..) => false,
         })
@@ -609,16 +640,16 @@ mod test {
         let mut sud: Sudoku = Default::default();
         sud.insert_number(TESTNR, X, Y).unwrap();
         refvec.retain(|x| *x != TESTNR);
-        assert!(sud.field[X][(Y + 1) % 9 + 1]
+        assert!(sud.grid[X][(Y + 1) % 9 + 1].entry
                 == Entry::Possibilities(refvec.clone())); // Same column
-        assert!(sud.field[(X + 1) % 9 + 1][Y]
+        assert!(sud.grid[(X + 1) % 9 + 1][Y].entry
                 == Entry::Possibilities(refvec.clone())); // Same row
         let x : usize;
         let y : usize;
         if X % 3 != 2 {x = X + 1} else {x = X - 1};
         if Y % 3 != 2 {y = Y + 1} else {y = Y - 1};
         // println!("x: {} y: {}", x, y);
-        assert!(sud.field[x][y] ==  Entry::Possibilities(refvec.clone())); // Same square
+        assert!(sud.grid[x][y].entry ==  Entry::Possibilities(refvec.clone())); // Same square
     }
 
     #[test]
@@ -634,7 +665,7 @@ mod test {
         refvec.retain(|x| *x != TESTNR);
         let mut sud: Sudoku = Default::default();
         sud.remove_from_guesses_col(TESTNR, X).unwrap();
-        assert!(sud.field[X][(Y + 1) % 9] == Entry::Possibilities(refvec));
+        assert!(sud.grid[X][(Y + 1) % 9].entry == Entry::Possibilities(refvec));
     }
 
     #[test]
@@ -643,7 +674,7 @@ mod test {
         refvec.retain(|x| *x != TESTNR);
         let mut sud: Sudoku = Default::default();
         sud.remove_from_guesses_line(TESTNR, X).unwrap();
-        assert!(sud.field[(X + 1) % 9][Y] == Entry::Possibilities(refvec));
+        assert!(sud.grid[(X + 1) % 9][Y].entry == Entry::Possibilities(refvec));
     }
 
     #[test]
@@ -657,7 +688,7 @@ mod test {
         if Y % 3 != 2 {y = Y + 1} else {y = Y - 1};
 
         sud.remove_from_guesses_square(TESTNR, X/3, Y/3).unwrap();
-        assert!(sud.field[x][y] == Entry::Possibilities(refvec));
+        assert!(sud.grid[x][y].entry == Entry::Possibilities(refvec));
     }
 
     #[test]
@@ -688,9 +719,9 @@ mod test {
              007290086\
              103607204  ");
         sud.read_from_string(&stringfield).unwrap();
-        assert!(sud.field[1][0] == Entry::Value(5));
-        assert!(sud.field[4][4] == Entry::Value(2));
-        assert!(sud.field[5][8] == Entry::Value(7));
+        assert!(sud.grid[1][0].entry == Entry::Value(5));
+        assert!(sud.grid[4][4].entry == Entry::Value(2));
+        assert!(sud.grid[5][8].entry == Entry::Value(7));
     }
 
     #[test]
@@ -765,10 +796,10 @@ mod test {
              000020600\
              059030028")).unwrap();
         sud.easy_solve().unwrap();
-        assert!(sud.field[0][0] == Entry::Value(5));
-        assert!(sud.field[0][4] == Entry::Value(2));
-        assert!(sud.field[4][5] == Entry::Value(6));
-        assert!(sud.field[6][8] == Entry::Value(7));
+        assert!(sud.grid[0][0].entry == Entry::Value(5));
+        assert!(sud.grid[0][4].entry == Entry::Value(2));
+        assert!(sud.grid[4][5].entry == Entry::Value(6));
+        assert!(sud.grid[6][8].entry == Entry::Value(7));
         // 568 | 712 | 943
         // 924 | 653 | 871
         // 731 | 849 | 256
