@@ -366,22 +366,24 @@ impl fmt::Display for Sudoku{
                                 if y1 == 1 {
                                     if self.grid[x][y].status == Status::Given{
                                         write!(f, " {}{}{}{}{} ", style::Bold,
-                                               color::Fg(color::Red), i,
+                                               color::Fg(color::LightCyan), i,
                                                color::Fg(color::Reset), style::Reset)?;
                                     }else{
-                                        write!(f, " {} ", i)?;
+                                        write!(f, " {}{}{}{}{} ",style::Bold,
+                                               color::Fg(color::Red), i,
+                                               color::Fg(color::Reset), style::Reset)?;
                                     }
                                 } else {
                                     write!(f, "   ")?;
                                 },
                             Entry::Possibilities(ref pvec) => {
-                                write!(f, "{}", color::Fg(color::LightCyan))?;
+                                write!(f, "{}", color::Fg(color::LightBlack))?;
                                 for x1 in 1..4 {
                                     if pvec.contains(&((x1 + y1 * 3) as u8)) {
                                         write!(f, "{}", x1 + y1 * 3)?;
                                     }
                                     else{
-                                        write!(f, ".")?;
+                                        write!(f, " ")?;
                                     }
                                 }
                                 write!(f, "{}", color::Fg(color::Reset))?
