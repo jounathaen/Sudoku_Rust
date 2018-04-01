@@ -1,6 +1,5 @@
 // fields.rs contains functions which give access to the sudoku field.
 // Jonathan Klimt
-
 extern crate csv;
 extern crate time;
 extern crate termion;
@@ -11,6 +10,7 @@ use std::fmt;
 use self::termion::{clear, cursor, color, style};
 use std::time::Duration;
 use std::thread;
+use std::convert::From;
 
 
 static ANIM_SPEED: u64 = 1500;
@@ -257,33 +257,6 @@ impl Sudoku {
     }
 
 
-    /// Create a Sudoku from a String. String is read left to right and 0 is
-    /// threatened as empty field. Performs a validity check
-    //TODO implement From trait instead
-    pub fn read_from_string(&mut self, input : &String) -> Result<(), Box<Error>> {
-        let trimed_input = input.trim();
-        assert!(trimed_input.len() == 81);
-        for (i, c) in  trimed_input.chars().enumerate(){
-            if let Some(dig) = c.to_digit(10){
-                if dig > 0 && dig <= 9 {
-                    let x = i % 9;
-                    let y = i / 9;
-                    self.insert_number(dig as u8, x, y)?;
-                    self.grid[x][y].status = Status::Given;
-                }
-            }
-            else {
-                // TODO return ioerror 
-                return Err(From::from(SolvingError::new(
-                    &format!("String {} contains non digit value at {}", input, i))));
-            }
-        }
-        match self.check_validity(){
-            Err(e) => Err(From::from(e)),
-            Ok(()) => Ok(()),
-        }
-    }
-
 
     pub fn is_solved (&self) -> bool {
         for y in 0..9 {
@@ -456,6 +429,42 @@ impl fmt::Display for Sudoku{
     }
 }
 
+/// Create a Sudoku from a String. String is read left to right and 0 is
+/// threatened as empty field. Performs a validity check
+//TODO use TryFrom, once it is stable
+impl From<String> for Sudoku {
+    fn from (input : String) -> Sudoku {
+    // pub fn read_from_string(&mut self, input : &String) -> Result<(), Box<Error>> {
+        let mut sud: Sudoku = Default::default();
+        let trimed_input = input.trim();
+        assert!(trimed_input.len() == 81);
+        for (i, c) in  trimed_input.chars().enumerate(){
+            if let Some(dig) = c.to_digit(10){
+                if dig > 0 && dig <= 9 {
+                    let x = i % 9;
+                    let y = i / 9;
+                    sud.insert_number(dig as u8, x, y).unwrap();
+                    sud.grid[x][y].status = Status::Given;
+                }
+            }
+            else {
+                panic!("Sudoku String contains invalid Characters");
+                // TODO return ioerror
+                // this is for a possible try_from implementation
+                //     return Err(From::from(SolvingError::new(
+                //         &format!("String {} contains non digit value at {}", input, i))));
+            }
+        }
+        match sud.check_validity(){
+            // Err(e) => Err(From::from(e)),
+            // Ok(()) => Ok(()),
+            Err(..) => panic!("Invalid Sudoku"),
+            Ok(()) => {},
+        }
+        return sud;
+    }
+}
+
 #[derive(Debug,  Clone, PartialEq)]
 enum Entry{
     Value (u8),
@@ -525,10 +534,11 @@ pub fn solve_sudokus_from_csv(file_path: &String) -> Result<(), Box<Error>> {
     let file = File::open(file_path)?;
     let mut rdr = csv::Reader::from_reader(file);
     for result in rdr.records() {
-        let mut sud: Sudoku = Default::default();
+        let mut sud: Sudoku;
         if let Some(substring) = result.unwrap().get(0){
             let start = time::precise_time_ns();
-            sud.read_from_string(&String::from(substring))?;
+            // sud.read_from_string(&String::from(substring))?;
+            sud  = Sudoku::from(String::from(substring));
             if sud.print_lvl != Lvl::None {
                 println!("{:?}", substring);
                 println!("Sudoku: {}", sud);
@@ -578,8 +588,8 @@ mod test {
     #[test]
     #[should_panic]
     fn field_double_number() {
-        let mut sud: Sudoku = Default::default();
-        sud.read_from_string(&String::from(
+        let mut _sud: Sudoku = Default::default();
+        _sud = Sudoku::from(String::from(
             "503070190\
              000006750\
              047190600\
@@ -588,9 +598,9 @@ mod test {
              000010072\
              000804001\
              300001860\
-             086720005")).unwrap();
-        sud.grid[1][0].entry = Entry::Value(5);
-        sud.check_validity().unwrap();
+             086720005"));
+        _sud.grid[1][0].entry = Entry::Value(5);
+        _sud.check_validity().unwrap();
     }
 
 
@@ -707,7 +717,7 @@ mod test {
 
     #[test]
     fn read_from_string(){
-        let mut sud : Sudoku = Default::default();
+        let mut _sud : Sudoku = Default::default();
         let stringfield = String::from(
             "   050083017\
              000100400\
@@ -718,16 +728,16 @@ mod test {
              009000050\
              007290086\
              103607204  ");
-        sud.read_from_string(&stringfield).unwrap();
-        assert!(sud.grid[1][0].entry == Entry::Value(5));
-        assert!(sud.grid[4][4].entry == Entry::Value(2));
-        assert!(sud.grid[5][8].entry == Entry::Value(7));
+        _sud = Sudoku::from(stringfield);
+        assert!(_sud.grid[1][0].entry == Entry::Value(5));
+        assert!(_sud.grid[4][4].entry == Entry::Value(2));
+        assert!(_sud.grid[5][8].entry == Entry::Value(7));
     }
 
     #[test]
     #[should_panic]
     fn read_from_invalid_string(){
-        let mut sud : Sudoku = Default::default();
+        let mut _sud : Sudoku = Default::default();
         let stringfield = String::from(
             "0500830a7\
              000100400\
@@ -738,23 +748,23 @@ mod test {
              009000050\
              007290086\
              103607204");
-        sud.read_from_string(&stringfield).unwrap();
+        _sud = Sudoku::from(stringfield);
     }
 
     #[test]
     #[should_panic]
     fn read_from_invalid_length_string(){
-        let mut sud : Sudoku = Default::default();
+        let mut _sud : Sudoku = Default::default();
         let stringfield = String::from(
             "050083007\
              000100400\
              103607204");
-        sud.read_from_string(&stringfield).unwrap();
+        _sud = Sudoku::from(stringfield);
     }
 
     #[test]
     fn is_solved(){
-        let mut sud : Sudoku = Default::default();
+        let mut _sud : Sudoku = Default::default();
         let mut stringfield = String::from(
             "050083017\
              000100400\
@@ -765,9 +775,9 @@ mod test {
              009000050\
              007290086\
              103607204");
-        sud.read_from_string(&stringfield).unwrap();
-        assert!(sud.is_solved() == false);
-        sud = Default::default();
+        _sud = Sudoku::from(stringfield);
+        assert!(_sud.is_solved() == false);
+        _sud = Default::default();
         stringfield = String::from(
             "652483917\
              978162435\
@@ -778,14 +788,14 @@ mod test {
              269348751\
              547291386\
              183657294");
-        sud.read_from_string(&stringfield).unwrap();
-        assert!(sud.is_solved() == true);
+        _sud = Sudoku::from(stringfield);
+        assert!(_sud.is_solved() == true);
     }
 
     #[test]
     fn easy_solve(){
-        let mut sud: Sudoku = Default::default();
-        sud.read_from_string(&String::from(
+        let mut _sud: Sudoku = Default::default();
+        _sud = Sudoku::from(String::from(
             "068700900\
              004000071\
              030809050\
@@ -794,12 +804,12 @@ mod test {
              007304092\
              602001005\
              000020600\
-             059030028")).unwrap();
-        sud.easy_solve().unwrap();
-        assert!(sud.grid[0][0].entry == Entry::Value(5));
-        assert!(sud.grid[0][4].entry == Entry::Value(2));
-        assert!(sud.grid[4][5].entry == Entry::Value(6));
-        assert!(sud.grid[6][8].entry == Entry::Value(7));
+             059030028"));
+        _sud.easy_solve().unwrap();
+        assert!(_sud.grid[0][0].entry == Entry::Value(5));
+        assert!(_sud.grid[0][4].entry == Entry::Value(2));
+        assert!(_sud.grid[4][5].entry == Entry::Value(6));
+        assert!(_sud.grid[6][8].entry == Entry::Value(7));
         // 568 | 712 | 943
         // 924 | 653 | 871
         // 731 | 849 | 256
