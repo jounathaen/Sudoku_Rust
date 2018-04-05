@@ -529,7 +529,6 @@ impl Error for InsertError {
     }
 }
 
-//TODO Write test
 pub fn solve_sudokus_from_csv(file_path: &String) -> Result<(), Box<Error>> {
     let mut counter : u64 = 1;
     let beginn_time= time::precise_time_ns();
@@ -617,11 +616,13 @@ mod test {
     }
 
     #[test]
-    #[should_panic]
     fn insert_twice() {
         let mut sud: Sudoku = Default::default();
         sud.insert_number(TESTNR, X, Y).unwrap();
-        sud.insert_number((TESTNR + 1) % 9 + 1, X, Y).unwrap();
+        let e = sud.insert_number((TESTNR + 1) % 9 + 1, X, Y).unwrap_err();
+        println!("{:?}", e);
+        println!("{}\n{}", e.description(), e);
+
     }
 
     #[test]
@@ -668,6 +669,14 @@ mod test {
     fn print_sudoku(){
         let mut sud: Sudoku = Default::default();
         sud.insert_number(TESTNR, X, Y).unwrap();
+
+        sud.print_lvl = Lvl::Verbose;
+        println!("{}", sud);
+        sud.print_lvl = Lvl::Interactive;
+        println!("{}", sud);
+        sud.print_lvl = Lvl::Solution;
+        println!("{}", sud);
+        sud.print_lvl = Lvl::None;
         println!("{}", sud);
     }
 
@@ -824,6 +833,14 @@ mod test {
         // 473 | 528 | 619
         // 159 | 436 | 728
 
+    }
+
+    #[test]
+    fn read_from_csv(){
+        let file_path = "./data/testdata.csv";
+        if let Err(err) = solve_sudokus_from_csv(&String::from(file_path)) {
+            println!("{}", err);
+        }
     }
 
 }
